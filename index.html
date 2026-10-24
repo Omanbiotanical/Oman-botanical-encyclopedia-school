@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>موسوعة النباتات العُمانية</title>
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101713;font-family:Tahoma,Arial,sans-serif}
+.screen{position:fixed;inset:0;display:none;place-items:center}
+.screen.active{display:grid}
+.stage{position:relative;width:min(100vw,177.7778vh);height:min(56.25vw,100vh);overflow:hidden;background:#111}
+.art{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:fill;user-select:none;-webkit-user-drag:none}
+.hotspot{position:absolute;z-index:20;border:0;background:transparent;padding:0;cursor:pointer}
+
+/* البداية */
+#startBtn{left:37%;top:74%;width:26%;height:18%}
+
+/* صفحة الفصائل: الضغط على الفصيلة نفسها في التصميم */
+#rhamBtn{left:0%;top:4%;width:15%;height:94%}
+#fabBtn{left:71%;top:4%;width:15%;height:94%}
+
+/* اختيار نباتات البقولية: الغاف والسلم */
+#ghafBtn{left:8%;top:18%;width:38%;height:66%}
+#salamBtn{right:8%;top:18%;width:38%;height:66%}
+
+/* رجوع: أعلى يمين الصفحة، شفاف */
+.back{right:0;top:0;width:13%;height:13%;z-index:40}
+
+/* شريط الأزرار المرسوم داخل صور النبات */
+.plantNav{
+ position:absolute;z-index:35;left:32.2%;bottom:1.1%;
+ width:35.6%;height:9%;display:grid;grid-template-columns:repeat(6,1fr);
+ direction:ltr;pointer-events:none
+}
+.plantNav button{border:0;background:transparent;padding:0;cursor:pointer;pointer-events:auto}
+
+/* 3D بجانب "تعرّف عليه" في نفس الشريحة */
+.modelBox{position:absolute;z-index:12;left:2.5%;top:10%;width:39%;height:68%;display:none}
+.modelBox.on{display:block}
+model-viewer{width:100%;height:100%;background:transparent;--poster-color:transparent}
+
+/* نافذة شاهد */
+.videoLayer{position:absolute;inset:0;z-index:60;display:none;place-items:center;background:rgba(5,12,8,.76)}
+.videoLayer.on{display:grid}
+.videoPanel{position:relative;width:min(88%,1100px);aspect-ratio:16/9;background:#000;border:1px solid #c9aa66;border-radius:18px;overflow:hidden}
+.videoPanel video,.videoPanel iframe{width:100%;height:100%;border:0;object-fit:contain}
+.closeVideo{position:absolute;left:10px;top:10px;z-index:5;width:42px;height:42px;border-radius:50%;border:1px solid #c9aa66;background:#173626;color:#fff;font-size:22px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- 1 الرئيسية -->
+<section id="home" class="screen active">
+ <div class="stage">
+  <img class="art" src="assets/01_Entrance.png" alt="">
+  <button id="startBtn" class="hotspot" aria-label="ابدأ رحلة الاستكشاف"></button>
+ </div>
+</section>
+
+<!-- 2 الفصائل -->
+<section id="families" class="screen">
+ <div class="stage">
+  <img class="art" src="assets/02_Plant-Families.png" alt="">
+  <button id="rhamBtn" class="hotspot" aria-label="الفصيلة النبقية"></button>
+  <button id="fabBtn" class="hotspot" aria-label="الفصيلة البقولية"></button>
+ </div>
+</section>
+
+<!-- 3 السدر مباشرة بعد النبقية -->
+<section id="plant" class="screen">
+ <div class="stage">
+  <img id="plantArt" class="art" src="" alt="">
+  <button id="plantBack" class="hotspot back" aria-label="الرجوع إلى الفصائل"></button>
+
+  <div id="modelBox" class="modelBox">
+   <model-viewer id="viewer" camera-controls interaction-prompt="none"
+    shadow-intensity=".7" exposure="1" environment-image="neutral"></model-viewer>
+  </div>
+
+  <div class="plantNav">
+   <button data-tab="intro" aria-label="تعرّف عليه"></button>
+   <button data-tab="harvest" aria-label="الاستخراج"></button>
+   <button data-tab="uses" aria-label="الاستخدامات"></button>
+   <button data-tab="culture" aria-label="الثقافة"></button>
+   <button data-tab="habitat" aria-label="الموطن"></button>
+   <button data-tab="watch" aria-label="شاهد"></button>
+  </div>
+
+  <div id="videoLayer" class="videoLayer">
+   <div class="videoPanel">
+    <button id="closeVideo" class="closeVideo">×</button>
+    <div id="videoContent" style="width:100%;height:100%"></div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 4 اختيار نبات من البقولية -->
+<section id="fabaceaeChoice" class="screen">
+ <div class="stage">
+  <!-- إذا عندك تصميم خاص لاختيار الغاف والسلم ضعيه بهذا الاسم -->
+  <img id="fabChoiceArt" class="art" src="assets/02-00_Fabaceae-Choice.png"
+       onerror="this.src='assets/02_Plant-Families.png'" alt="">
+  <button id="choiceBack" class="hotspot back" aria-label="الرجوع إلى الفصائل"></button>
+  <button id="ghafBtn" class="hotspot" aria-label="الغاف"></button>
+  <button id="salamBtn" class="hotspot" aria-label="السلم"></button>
+ </div>
+</section>
+
+<audio id="familiesAudio" src="media/1(6).mp3" preload="auto"></audio>
+
+<script>
+const screens=[...document.querySelectorAll(".screen")];
+const audio=document.getElementById("familiesAudio");
+const art=document.getElementById("plantArt");
+const viewer=document.getElementById("viewer");
+const modelBox=document.getElementById("modelBox");
+const videoLayer=document.getElementById("videoLayer");
+const videoContent=document.getElementById("videoContent");
+
+const plants={
+ sidr:{
+  model:"models/01-01_Sidr_3D.glb",
+  intro:"assets/03_Plant-Introduction.png",
+  harvest:"assets/04_Harvesting.png",
+  uses:"assets/05_Uses.png",
+  culture:"assets/06_Culture-Heritage.png",
+  habitat:"assets/07_Habitat.png",
+  watch:"assets/08_Watch.png",
+  video:"media/01-01_Sidr_Video.mp4"
+ },
+ ghaf:{
+  model:"models/02-02_Ghaf_3D.glb",
+  intro:"assets/02-02_Ghaf_Introduction.png",
+  harvest:"assets/02-02_Ghaf_Harvesting.png",
+  uses:"assets/02-02_Ghaf_Uses.png",
+  culture:"assets/02-02_Ghaf_Culture-Heritage.png",
+  habitat:"assets/02-02_Ghaf_Habitat.png",
+  watch:"assets/02-02_Ghaf_Watch.png"
+ },
+ salam:{
+  model:"models/02-02_Salam_3D.glb",
+  intro:"assets/02-02_Salam_Introduction.png",
+  harvest:"assets/02-02_Salam_Harvesting.png",
+  uses:"assets/02-02_Salam_Uses.png",
+  culture:"assets/02-02_Salam_Culture-Heritage.png",
+  habitat:"assets/02-02_Salam_Habitat.png",
+  watch:"assets/02-02_Salam_Watch.png"
+ }
+};
+
+let current="sidr";
+
+function show(id){
+ screens.forEach(s=>s.classList.toggle("active",s.id===id));
+ if(id==="families"){
+  audio.currentTime=0;
+  audio.play().catch(()=>{});
+ }else audio.pause();
+}
+function openPlant(name){
+ current=name;
+ viewer.src=plants[name].model;
+ show("plant");
+ tab("intro");
+}
+function closeVideo(){
+ videoLayer.classList.remove("on");
+ videoContent.innerHTML="";
+}
+function tab(name){
+ const p=plants[current];
+ art.src=p[name];
+ modelBox.classList.toggle("on",name==="intro");
+ closeVideo();
+ if(name==="watch" && p.video){
+  videoLayer.classList.add("on");
+  videoContent.innerHTML=`<video src="${p.video}" controls autoplay playsinline></video>`;
+ }
+}
+
+document.getElementById("startBtn").onclick=()=>show("families");
+
+/* النبقية -> السدر */
+document.getElementById("rhamBtn").onclick=()=>openPlant("sidr");
+
+/* من السدر زر الرجوع -> الفصائل */
+document.getElementById("plantBack").onclick=()=>show("families");
+
+/* البقولية -> صفحة اختيار الغاف/السلم */
+document.getElementById("fabBtn").onclick=()=>show("fabaceaeChoice");
+document.getElementById("choiceBack").onclick=()=>show("families");
+document.getElementById("ghafBtn").onclick=()=>openPlant("ghaf");
+document.getElementById("salamBtn").onclick=()=>openPlant("salam");
+
+document.querySelectorAll(".plantNav button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+document.getElementById("closeVideo").onclick=closeVideo;
+videoLayer.onclick=e=>{if(e.target===videoLayer)closeVideo()};
+</script>
+</body>
+</html>
